@@ -1,0 +1,118 @@
+<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Admin · Drone Store</title>
+<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#f3f4f6}main{max-width:960px;margin:auto;padding:10px}
+nav{display:flex;gap:6px;overflow-x:auto;background:#222;padding:8px;position:sticky;top:0;z-index:5}nav button{white-space:nowrap;background:#444;color:#fff;border:0;border-radius:8px;padding:9px 13px}nav .on{background:#e8590c}
+.card{background:#fff;border-radius:10px;padding:12px;margin:8px 0}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>div{flex:1;min-width:140px}
+input,select,textarea{width:100%;padding:9px;margin:4px 0;border:1px solid #ccc;border-radius:8px;font:inherit}input[type=checkbox]{width:auto}
+button{padding:8px 12px;border:0;border-radius:8px;background:#e8590c;color:#fff;cursor:pointer}button.o{background:#fff;color:#e8590c;border:1px solid #e8590c}button.g{background:#2e7d32}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.g .card{text-align:center;padding:10px}.g b{font-size:20px;display:block}
+img.t{width:56px;height:56px;object-fit:cover;border-radius:6px}h4{margin:14px 0 4px}
+.pform,.sform{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 14px;align-items:start}
+.pform .full,.sform .full{grid-column:1/-1}
+fieldset{border:1px solid #ddd;border-radius:8px;margin:10px 0;padding:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 14px;align-items:start}
+legend{font-weight:700;padding:0 6px;grid-column:1/-1}
+label.chk{display:flex;align-items:center;gap:6px;font-size:14px}
+</style></head><body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="config.js"></script>
+<script>
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+let tab='dash',CATS=[],PR=[],STATUSES=[];
+const TABS={dash:'Dashboard',products:'Products',cats:'Categories',orders:'Orders',reviews:'Reviews',settings:'Settings'};
+function csv(rows,filename){if(!rows.length)return alert('কোনো data নেই');const cols=Object.keys(rows[0]);const esc2=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+const text=[cols.join(','),...rows.map(r=>cols.map(c=>esc2(typeof r[c]==='object'?JSON.stringify(r[c]):r[c])).join(','))].join('\n');
+const blob=new Blob([text],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click()}
+async function boot(){const{data:{session}}=await sb.auth.getSession();session?show():login()}
+function login(){app.innerHTML=`<main><form class="card" id="lf" style="max-width:360px;margin:60px auto"><h2>Admin Login</h2><input name="e" type="email" placeholder="Email" required><input name="p" type="password" placeholder="Password" required><button style="width:100%">Login</button></form></main>`;
+lf.onsubmit=async e=>{e.preventDefault();const f=new FormData(lf);const{error}=await sb.auth.signInWithPassword({email:f.get('e'),password:f.get('p')});error?alert(error.message):show()}}
+async function show(){app.innerHTML=`<nav>${Object.entries(TABS).map(([k,v])=>`<button class="${k==tab?'on':''}" onclick="tab='${k}';show()">${v}</button>`).join('')}<button onclick="sb.auth.signOut().then(login)">Logout</button></nav><main id="main">লোড হচ্ছে...</main>`;await({dash,products,cats,orders,reviews,settings}[tab])()}
+
+async function dash(){const[o,p]=await Promise.all([sb.from('store_orders').select('*'),sb.from('store_products').select('id,stock,stock_status',{count:'exact'})]);
+const l=o.data||[],pr=p.data||[];const n=s=>l.filter(x=>x.status==s).length,pn=s=>l.filter(x=>x.payment_status==s).length;
+const today=new Date().toDateString(),todaySales=l.filter(x=>new Date(x.created_at).toDateString()==today).reduce((a,x)=>a+ +x.grand_total,0);
+const totalSales=l.filter(x=>x.status=='Delivered').reduce((a,x)=>a+ +x.grand_total,0);
+const low=pr.filter(x=>x.stock>0&&x.stock<=5).length,oos=pr.filter(x=>x.stock_status=='Out of Stock').length;
+const box=(b,a)=>`<div class="card"><b>${b}</b>${a}</div>`;
+main.innerHTML=`<div class="g">${box(pr.length,'Products')}${box(l.length,'Total Orders')}${box(n('Pending Payment'),'Pending Payment')}${box(pn('Pending Verification'),'Pending Verify')}${box(n('Confirmed'),'Confirmed')}${box(n('Processing'),'Processing')}${box(n('Shipped'),'Shipped')}${box(n('Delivered'),'Delivered')}${box(n('Cancelled'),'Cancelled')}${box('৳'+todaySales,"Today's Sales")}${box('৳'+totalSales,'Total Sales (Delivered)')}${box(low,'Low Stock')}${box(oos,'Out of Stock')}</div>
+<h4>Recent Orders</h4>`+[...l].sort((a,b)=>b.id-a.id).slice(0,8).map(x=>`<div class="card">${esc(x.order_no)} — ${esc(x.name)} — ৳${x.grand_total} — <b>${esc(x.status)}</b></div>`).join('')}
+
+async function products(){const[p,c]=await Promise.all([sb.from('store_products').select().order('id',{ascending:false}),sb.from('store_categories').select().order('sort')]);PR=p.data||[];CATS=c.data||[];
+main.innerHTML=`<div class="row"><button onclick="pform()">+ নতুন Product</button><button class="o" onclick="csv(PR,'products.csv')">⬇ Export CSV</button></div><div id="pf"></div>`+PR.map(x=>`<div class="card row"><img class="t" src="${esc((x.images||[])[0]||'')}"><div>${esc(x.name)}<br><small>৳${x.price}${x.discount_price?' → ৳'+x.discount_price:''} · stock ${x.stock} · ${x.visible?'Visible':'Hidden'}${x.featured?' · ⭐':''}</small></div><button onclick="pform(${x.id})">Edit</button><button class="o" onclick="tog(${x.id},${!x.visible})">${x.visible?'Hide':'Show'}</button><button class="o" onclick="dup(${x.id})">Duplicate</button><button style="background:#c0392b" onclick="del('store_products',${x.id})">Delete</button></div>`).join('')}
+async function tog(id,v){await sb.from('store_products').update({visible:v}).eq('id',id);products()}
+async function dup(id){const x=PR.find(p=>p.id==id);const{id:_,...row}=x;row.name+=' (Copy)';row.visible=false;await sb.from('store_products').insert(row);products()}
+async function del(t,id){if(confirm('নিশ্চিত?')){const{error}=await sb.from(t).delete().eq('id',id);if(error)alert(error.message);show()}}
+function pform(id){const x=PR.find(p=>p.id==id)||{images:[],stock_status:'In Stock',visible:true};
+pf.innerHTML=`<form class="card pform" onsubmit="psave(event,${id||0})"><input name="name" placeholder="Product Name" value="${esc(x.name)}" required><input name="sku" placeholder="SKU/Code" value="${esc(x.sku)}"><input name="price" type="number" placeholder="Price" value="${x.price??''}" required><input name="dp" type="number" placeholder="Discount Price (ঐচ্ছিক)" value="${x.discount_price??''}">
+<select name="cat"><option value="">Category নেই</option>${CATS.map(c=>`<option value="${c.id}" ${c.id==x.category_id?'selected':''}>${esc(c.name)}</option>`).join('')}</select><input name="stock" type="number" placeholder="Stock" value="${x.stock??0}"><select name="ss">${['In Stock','Out of Stock','Pre-order'].map(s=>`<option ${s==x.stock_status?'selected':''}>${s}</option>`).join('')}</select>
+<div class="row"><label class="chk"><input type="checkbox" name="featured" ${x.featured?'checked':''}> Featured</label><label class="chk"><input type="checkbox" name="visible" ${x.visible?'checked':''}> Visible</label></div>
+<textarea class="full" name="d" rows="4" placeholder="Description">${esc(x.description)}</textarea>
+<div class="row full">${(x.images||[]).map(u=>`<label style="flex:none"><img class="t" src="${esc(u)}"><br><input type="checkbox" name="keep" value="${esc(u)}" checked> রাখুন</label>`).join('')}</div>
+<input class="full" type="file" name="img" accept="image/*" multiple><button class="full">Save</button></form>`;pf.scrollIntoView()}
+async function up(file){const path=Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+file.name.replace(/[^\w.]/g,'');const{error}=await sb.storage.from('store_media').upload(path,file);if(error){alert(error.message);return null}return sb.storage.from('store_media').getPublicUrl(path).data.publicUrl}
+async function psave(e,id){e.preventDefault();const f=new FormData(e.target);e.target.querySelector('button').disabled=true;const imgs=f.getAll('keep');for(const file of e.target.img.files){const u=await up(file);if(!u)return;imgs.push(u)}
+const row={name:f.get('name'),sku:f.get('sku'),price:+f.get('price'),discount_price:f.get('dp')?+f.get('dp'):null,category_id:f.get('cat')||null,stock:+f.get('stock')||0,stock_status:f.get('ss'),description:f.get('d'),featured:!!f.get('featured'),visible:!!f.get('visible'),images:imgs};
+const{error}=id?await sb.from('store_products').update(row).eq('id',id):await sb.from('store_products').insert(row);error?alert(error.message):products()}
+
+async function reviews(){const{data,error}=await sb.from('store_reviews').select('*, store_products(name)').order('created_at',{ascending:false});
+if(error){main.innerHTML=`<div class="card">Error: ${esc(error.message)}</div>`;return}
+main.innerHTML=(data||[]).map(r=>`<div class="card"><b>${esc(r.store_products?.name||'(Product মুছে ফেলা হয়েছে)')}</b><br>${esc(r.name)} · ${'⭐'.repeat(r.rating)} · ${new Date(r.created_at).toLocaleDateString()}<br>${esc(r.comment)}<br><button style="background:#c0392b;margin-top:6px" onclick="del('store_reviews',${r.id})">Delete</button></div>`).join('')||'<div class="card">এখনো কোনো Review নেই</div>'}
+
+async function cats(){const{data}=await sb.from('store_categories').select().order('sort');main.innerHTML=`<form class="card row" onsubmit="cadd(event)"><input name="n" placeholder="নতুন Category" required><input name="so" type="number" placeholder="Sort নম্বর" style="max-width:100px" value="0"><button>Add</button></form>`+(data||[]).map(c=>`<div class="card row"><div>${esc(c.name)} <small>(sort ${c.sort})</small></div><button class="o" onclick="cren(${c.id},'${esc(c.name).replace(/'/g,'')}')">Rename</button><button class="o" onclick="ctog(${c.id},${!c.visible})">${c.visible?'Hide':'Show'}</button><button style="background:#c0392b" onclick="del('store_categories',${c.id})">Delete</button></div>`).join('')}
+async function cadd(e){e.preventDefault();const f=new FormData(e.target);await sb.from('store_categories').insert({name:f.get('n'),sort:+f.get('so')||0,visible:true});cats()}
+async function cren(id,n){const v=prompt('নতুন নাম',n);if(v){await sb.from('store_categories').update({name:v}).eq('id',id);cats()}}
+async function ctog(id,v){await sb.from('store_categories').update({visible:v}).eq('id',id);cats()}
+
+async function orders(){const[o,s,sg]=await Promise.all([sb.from('store_orders').select().order('id',{ascending:false}),sb.from('store_order_statuses').select().order('sort'),sb.from('store_settings').select()]);STATUSES=s.data||[];SG=Object.fromEntries((sg.data||[]).map(x=>[x.key,x.value]));
+main.innerHTML=`<button class="o" id="expBtn">⬇ Export Orders CSV</button>`+(o.data||[]).map(x=>`<div class="card"><b>${esc(x.order_no)}</b> · ${new Date(x.created_at).toLocaleString()}<br>${esc(x.name)} · ${esc(x.mobile)}<br>${esc(x.address)}, ${esc(x.area)}, ${esc(x.district)}${x.note?'<br>নোট: '+esc(x.note):''}<br>${(x.items||[]).map(i=>`${esc(i.name)} × ${i.qty}`).join(', ')}<br>Product: ৳${x.product_total} · Delivery: ৳${x.delivery_charge} · COD বাকি: ৳${x.cod_amount} · Grand: ৳${x.grand_total}
+<br>Method: ${esc(x.pay_method)} · ${x.transaction_id?'TrxID <b>'+esc(x.transaction_id)+'</b>':'Payment Mobile <b>'+esc(x.payment_mobile)+'</b>'} · ৳${x.pay_amount} · <b>${esc(x.payment_status)}</b>
+<div class="row" style="margin-top:6px">
+<input placeholder="Courier Name" value="${esc(x.courier_name)}" id="cn${x.id}">
+<input placeholder="Tracking ID" value="${esc(x.tracking_id)}" id="tid${x.id}">
+<input placeholder="Tracking URL" value="${esc(x.tracking_url)}" id="turl${x.id}">
+<button class="o" onclick="saveCourier(${x.id})">Courier Save</button></div>
+<div class="row"><button class="g" onclick="ost(${x.id},'Verified',null)">✔ Verify Payment</button><button class="g" onclick="ost(${x.id},null,'Confirmed')">✔ Confirm Order</button>
+<select onchange="ost(${x.id},null,this.value)">${STATUSES.map(t=>`<option ${t.name==x.status?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+${SG&&SG.messenger_page?`<a class="o" style="display:inline-block;padding:8px 12px;border-radius:8px;border:1px solid #06f;color:#06f" href="https://m.me/${esc(SG.messenger_page)}" target="_blank">💬 Messenger</a>`:''}
+<button style="background:#c0392b" onclick="del('store_orders',${x.id})">Delete</button></div></div>`).join('');
+document.getElementById('expBtn').onclick=()=>csv(o.data||[],'orders.csv')}
+async function saveCourier(id){await sb.from('store_orders').update({courier_name:document.getElementById('cn'+id).value,tracking_id:document.getElementById('tid'+id).value,tracking_url:document.getElementById('turl'+id).value}).eq('id',id);alert('Courier info saved');orders()}
+async function ost(id,ps,st){const u={};if(ps)u.payment_status=ps;if(st)u.status=st;const{data,error}=await sb.from('store_orders').update(u).eq('id',id).select().single();
+if(!error&&data)sb.functions.invoke('telegram-notify',{body:{type:'update',order:data}}).catch(()=>{});
+orders()}
+
+let SG={};
+const FIELDS=[
+['General',[['site_name','Store Name'],['phone','Phone'],['messenger_page','Messenger Page Username (m.me/xxx)'],['facebook','Facebook Page Link'],['address','Business Address'],['footer','Footer Text'],['currency','Currency Symbol'],['notice','Site Notice Text'],['notice_on','Site Notice ON/OFF','bool'],['footer_on','Footer Section ON/OFF','bool']]],
+['Images',[['logo_url','Logo','img'],['favicon_url','Favicon','img'],['banner_url','Homepage Banner','img'],['banner_on','Banner ON/OFF','bool']]],
+['Delivery ও Payment',[['delivery_charge','Delivery Charge (=Advance amount)','n'],['bkash','bKash Number'],['bkash_on','bKash চালু','bool'],['nagad','Nagad Number'],['nagad_on','Nagad চালু','bool'],['rocket','Rocket Number'],['rocket_on','Rocket চালু','bool'],['pay_instructions','Payment Instructions']]],
+['Design',[['primary_color','Primary Color','color'],['radius','Card/Button Radius (px)','n'],['cols_mobile','Mobile-এ এক লাইনে Product','n'],['cols_desktop','Desktop-এ এক লাইনে Product','n']]],
+['Homepage Sections',[['sec_categories_on','Categories Section','bool'],['sec_categories_title','— Title'],['sec_featured_on','Featured Section','bool'],['sec_featured_title','— Title'],['sec_new_on','New Products Section','bool'],['sec_new_title','— Title'],['sec_discount_on','Discount Section','bool'],['sec_discount_title','— Title'],['sec_all_on','All Products Section','bool'],['sec_all_title','— Title'],['sec_order','Section Order (comma দিয়ে লিখুন, যেমন: categories,featured,new,discount,all)']]],
+['Footer পাতা (About/Privacy/Terms)',[['about_text','About Us লেখা','ta'],['privacy_text','Privacy Policy লেখা','ta'],['terms_text','Terms & Conditions লেখা','ta']]]
+];
+async function settings(){const{data}=await sb.from('store_settings').select();SG=Object.fromEntries((data||[]).map(x=>[x.key,x.value]));
+const THEMES={'কমলা (Default)':'#e8590c','নীল':'#1565c0','সবুজ':'#2e7d32','বেগুনি':'#6a1b9a','লাল':'#c62828','কালো':'#212121'};
+main.innerHTML=`<form class="card" onsubmit="ssave(event)">`+FIELDS.map(([grp,fs])=>`<fieldset><legend>${grp}</legend>`+
+(grp=='Design'?`<div class="field full"><label>Theme Preset বেছে নিন</label><select onchange="document.querySelector('input[name=primary_color]').value=this.value">${Object.entries(THEMES).map(([n,c])=>`<option value="${c}">${n}</option>`).join('')}</select></div>`:'')+
+fs.map(([k,l,t])=>{
+if(t=='img')return `<div class="field full"><label>${l}</label>${SG[k]?`<img class="t" src="${esc(SG[k])}"><br>`:''}<input type="file" name="f_${k}" accept="image/*"></div>`;
+if(t=='bool')return `<div class="field"><label class="chk"><input type="checkbox" name="${k}" ${SG[k]===true||SG[k]==='1'?'checked':''}> ${l}</label></div>`;
+if(t=='color')return `<div class="field"><label>${l}</label><input type="color" name="${k}" value="${SG[k]||'#e8590c'}"></div>`;
+if(t=='ta')return `<div class="field full"><label>${l}</label><textarea name="${k}" rows="4">${esc(SG[k])}</textarea></div>`;
+return `<div class="field"><label>${l}</label><input name="${k}" type="${t=='n'?'number':'text'}" value="${esc(SG[k])}"></div>`;
+}).join('')+`</fieldset>`).join('')+
+`<h4 class="full">Order Status List (প্রতি লাইনে একটি)</h4><textarea class="full" name="_st" rows="8">${STATUSES.length?STATUSES.map(x=>x.name).join('\n'):'Pending Payment\nPayment Verified\nConfirmed\nProcessing\nShipped\nDelivered\nCancelled'}</textarea><button class="full">Save Settings</button></form>`}
+async function ssave(e){e.preventDefault();const f=new FormData(e.target),rows=[];
+for(const[,fs]of FIELDS)for(const[k,,t]of fs){if(k.endsWith('_title')&&!f.has(k))continue;let v;
+if(t=='img'){const file=f.get('f_'+k);if(file&&file.size){v=await up(file);if(!v)return}else continue}
+else if(t=='bool')v=f.has(k);
+else if(t=='n')v=+f.get(k)||0;
+else v=f.get(k)||'';
+rows.push({key:k,value:v})}
+let r=await sb.from('store_settings').upsert(rows);if(r.error)return alert(r.error.message);
+const st=f.get('_st').split('\n').map(x=>x.trim()).filter(Boolean);const{data:old}=await sb.from('store_order_statuses').select('id,name');
+const oldNames=(old||[]).map(x=>x.name);
+for(let i=0;i<st.length;i++){const ex=(old||[]).find(x=>x.name===st[i]);if(ex)await sb.from('store_order_statuses').update({sort:i+1}).eq('id',ex.id);else await sb.from('store_order_statuses').insert({name:st[i],sort:i+1,visible:true})}
+const rm=oldNames.filter(x=>!st.includes(x));if(rm.length)await sb.from('store_order_statuses').delete().in('name',rm);
+alert('Save হয়েছে ✔');settings()}
+boot();
+</script></body></html>
