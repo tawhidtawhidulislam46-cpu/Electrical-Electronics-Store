@@ -30,11 +30,19 @@ nav.bn5 a.on{color:var(--c)}nav.bn5 .ic{font-size:20px}
 nav.bn5 a.home{margin-top:-22px}nav.bn5 a.home .ic{background:var(--c);color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 3px 10px #0004;border:4px solid #fff}
 .bdg{position:absolute;top:-4px;right:14px;background:#e8112f;color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:700}
 .rv{border-top:1px solid #eee;padding:8px 0}
+.lightbox{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:50}.lightbox.show{display:flex}.lightbox img{max-width:95%;max-height:95%;border-radius:4px}
+.searchwrap{position:relative;flex:1;max-width:200px}.searchwrap input{padding-left:30px;width:100%;margin:0}.sico{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5;font-size:14px;pointer-events:none}
+.fab{position:fixed;right:14px;bottom:84px;width:52px;height:52px;border-radius:50%;background:var(--c);color:#fff;display:none;align-items:center;justify-content:center;font-size:24px;box-shadow:0 3px 10px #0005;z-index:20;border:0}
+.fabmenu{position:fixed;right:14px;bottom:144px;background:#fff;border-radius:12px;box-shadow:0 3px 14px #0003;padding:8px;display:none;flex-direction:column;gap:6px;z-index:20;min-width:170px}
+.fabmenu.show{display:flex}.fabmenu a{padding:8px 10px;border-radius:8px;font-size:14px}.fabmenu a:hover{background:#f3f3f3}
+.statpill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:#eee}
 </style></head><body>
-<header><a href="#/" class="brand"><img id="lg" hidden><b id="sn"></b></a><input id="s" oninput="q=this.value;location.hash!='#/'&&(location.hash='#/');grid()"><button id="langBtn" onclick="toggleLang()">EN</button></header>
+<header><a href="#/" class="brand"><img id="lg" hidden><b id="sn"></b></a><div class="searchwrap"><span class="sico">🔍</span><input id="s" oninput="q=this.value;location.hash!='#/'&&(location.hash='#/');grid()"></div><button id="langBtn" onclick="toggleLang()">EN</button></header>
 <main id="v"></main><div id="noticebar"></div><footer id="ft"></footer>
+<div class="lightbox" id="lb" onclick="lb.classList.remove('show')"><img id="lbimg"></div>
+<div class="fabmenu" id="fabmenu"></div><button class="fab" id="fabBtn" onclick="fabmenu.classList.toggle('show')">💬</button>
 <nav class="bn5">
-<a href="#/categories" id="nc"><span class="ic">▦</span><span class="lbl" data-k="nav_category">Category</span></a>
+<a href="#/myorders" id="nc"><span class="ic">📑</span><span class="lbl" data-k="nav_myorders">My Order</span></a>
 <a href="#/wishlist" id="nw"><span class="ic">♡</span><span class="lbl" data-k="nav_wishlist">Wishlist</span><span class="bdg" id="wn" style="display:none">0</span></a>
 <a href="#/" class="home" id="nh"><span class="ic">⌂</span></a>
 <a href="#/cart" id="ncart"><span class="ic">🛒</span><span class="lbl" data-k="nav_cart">Cart</span><span class="bdg" id="cn" style="display:none">0</span></a>
@@ -70,7 +78,8 @@ no_order_found:'এই তথ্যে কোনো Order পাওয়া য
 courier_label:'Courier:',tracking_id_label:'Tracking ID:',track_courier_btn:'🚚 Track Courier',no_content_yet:'এখনো কোনো তথ্য যোগ করা হয়নি।',
 copyright_suffix:'সর্বস্বত্ব সংরক্ষিত।',reviews_title:'Customer Reviews',write_review:'রিভিউ লিখুন',comment_ph:'আপনার মতামত লিখুন',
 submit_review_btn:'জমা দিন',no_reviews_yet:'এখনো কোনো Review নেই। প্রথম review আপনিই দিন!',review_submitted:'ধন্যবাদ! আপনার Review জমা হয়েছে',
-about_us:'About Us',privacy_policy:'Privacy Policy',terms:'Terms & Conditions',reviews_count:'টি রিভিউ'},
+about_us:'About Us',privacy_policy:'Privacy Policy',terms:'Terms & Conditions',reviews_count:'টি রিভিউ',
+nav_myorders:'আমার Order',myorders_title:'📑 আমার সব Order',myorders_mobile_ph:'আপনার মোবাইল নম্বর দিন',myorders_save_btn:'দেখুন',myorders_empty:'এই নম্বরে কোনো Order পাওয়া যায়নি',myorders_change:'নম্বর বদলান',write_review_btn:'✍️ রিভিউ লিখুন'},
 en:{search_ph:'Search...',no_products:'No products found',nav_category:'Category',nav_wishlist:'Wishlist',nav_cart:'Cart',nav_track:'Track',
 sec_categories_default:'Categories',sec_featured_default:'⭐ Featured',sec_new_default:'New Products',sec_discount_default:'On Discount',sec_all_default:'All Products',
 all_categories_title:'All Categories',no_category:'No categories',product_not_found:'Product not found',qty_label:'Qty:',share_btn:'🔗 Share',
@@ -87,7 +96,8 @@ no_order_found:'No order found with this info.',order_date_label:'Order Date:',p
 courier_label:'Courier:',tracking_id_label:'Tracking ID:',track_courier_btn:'🚚 Track Courier',no_content_yet:'No content added yet.',
 copyright_suffix:'All rights reserved.',reviews_title:'Customer Reviews',write_review:'Write a Review',comment_ph:'Write your feedback',
 submit_review_btn:'Submit',no_reviews_yet:'No reviews yet. Be the first to review!',review_submitted:'Thanks! Your review was submitted',
-about_us:'About Us',privacy_policy:'Privacy Policy',terms:'Terms & Conditions',reviews_count:' reviews'}
+about_us:'About Us',privacy_policy:'Privacy Policy',terms:'Terms & Conditions',reviews_count:' reviews',
+nav_myorders:'My Order',myorders_title:'📑 My Orders',myorders_mobile_ph:'Enter your mobile number',myorders_save_btn:'View',myorders_empty:'No orders found for this number',myorders_change:'Change number',write_review_btn:'✍️ Write a Review'}
 };
 let lang=localStorage.getItem('lang')||'bn';
 const t=k=>T[lang][k]||k;
@@ -119,7 +129,7 @@ const setc=i=>{cat=i;location.hash='#/';setTimeout(()=>{home();cat=i;grid()},0)}
 function prod(id){const p=P.find(x=>x.id==id);if(!p){$('#v').innerHTML=t('product_not_found');return}qty=1;const out=p.stock_status=='Out of Stock';const im=imgs(p);
 const related=P.filter(x=>x.category_id===p.category_id&&x.id!==p.id).slice(0,4);
 $('#v').innerHTML=`<div class="card"><button class="wb ${wish.includes(p.id)?'on':''}" style="position:static;float:right" id="wbd${p.id}" onclick="toggleWish(event,${p.id})">${wish.includes(p.id)?'♥':'♡'}</button>
-<img id="mi" src="${esc(im[0]||'')}"><div class="th">${im.map(u=>`<img src="${esc(u)}" onclick="mi.src=this.src">`).join('')}</div>
+<img id="mi" src="${esc(im[0]||'')}" onclick="openZoom()"><div class="th">${im.map(u=>`<img src="${esc(u)}" onclick="mi.src=this.src">`).join('')}</div>
 <h2>${esc(p.name)}</h2><div style="color:#888;font-size:13px">SKU: ${esc(p.sku||'-')}</div>
 <div>${p.discount_price?`<s>${cur()}${p.price}</s> `:''}<span class="pp" style="font-size:22px">${cur()}${pr(p)}</span></div>
 <p>${esc(p.stock_status)}${p.stock>0&&p.stock<=5?` · <span class="low">${lang==='bn'?'মাত্র '+p.stock+'টি বাকি!':'Only '+p.stock+' left!'}</span>`:''}</p>
@@ -129,7 +139,7 @@ $('#v').innerHTML=`<div class="card"><button class="wb ${wish.includes(p.id)?'on
 <button class="btn o" ${out?'disabled':''} onclick="add(${p.id});alert(t('added_to_cart_msg'))">${t('add_to_cart')}</button>
 <button class="btn" ${out?'disabled':''} onclick="add(${p.id});location.hash='#/checkout'">${t('buy_now')}</button></div>
 ${related.length?`<div class="sec-title">${t('related_products')}</div><div class="grid">${related.map(card).join('')}</div>`:''}
-<div class="card"><h3>${t('reviews_title')}</h3><div id="revBox">…</div><form onsubmit="submitReview(event,${p.id})"><input name="rname" placeholder="${t('name_ph')}" required><select name="rating">${[5,4,3,2,1].map(n=>`<option value="${n}">${'⭐'.repeat(n)}</option>`).join('')}</select><textarea name="rcomment" placeholder="${t('comment_ph')}" required></textarea><button class="btn o">${t('submit_review_btn')}</button></form></div>`;
+<div class="card"><h3>${t('reviews_title')}</h3><div id="revBox">…</div><button class="btn o" onclick="rvform.style.display='block';this.style.display='none'">${t('write_review_btn')}</button><form id="rvform" style="display:none" onsubmit="submitReview(event,${p.id})"><input name="rname" placeholder="${t('name_ph')}" required><select name="rating">${[5,4,3,2,1].map(n=>`<option value="${n}">${'⭐'.repeat(n)}</option>`).join('')}</select><textarea name="rcomment" placeholder="${t('comment_ph')}" required></textarea><button class="btn">${t('submit_review_btn')}</button></form></div>`;
 loadReviews(id)}
 async function loadReviews(pid){const{data}=await sb.from('store_reviews').select().eq('product_id',pid).order('created_at',{ascending:false});
 const revs=data||[];const box=$('#revBox');if(!box)return;
@@ -139,6 +149,7 @@ box.innerHTML=(avg?`<div style="font-size:16px;margin-bottom:6px">⭐ ${avg} (${
 async function submitReview(e,pid){e.preventDefault();const f=new FormData(e.target);const btn=e.target.querySelector('button');btn.disabled=true;
 const{error}=await sb.from('store_reviews').insert({product_id:pid,name:f.get('rname'),rating:+f.get('rating'),comment:f.get('rcomment')});
 btn.disabled=false;if(error){alert(error.message);return}e.target.reset();alert(t('review_submitted'));loadReviews(pid)}
+function openZoom(){lbimg.src=mi.src;lb.classList.add('show')}
 function shareProd(id){const url=location.origin+location.pathname+'#/p/'+id;if(navigator.share)navigator.share({url});else{navigator.clipboard.writeText(url);alert(t('link_copied'))}}
 function add(id){const p=P.find(x=>x.id==id),i=cart.find(x=>x.id==id);i?i.qty+=qty:cart.push({id,name:p.name,price:pr(p),img:imgs(p)[0]||'',qty});save()}
 const chg=(i,d)=>{cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);save();cartv()};
@@ -173,10 +184,18 @@ const o=data[0];tr.innerHTML=`<div class="card"><b>${esc(o.order_no)}</b><br>${t
 ${o.courier_name?`<br>${t('courier_label')} <b>${esc(o.courier_name)}</b>`:''}${o.tracking_id?`<br>${t('tracking_id_label')} <b>${esc(o.tracking_id)}</b>`:''}
 ${o.tracking_url?`<a class="btn o" href="${esc(o.tracking_url)}" target="_blank">${t('track_courier_btn')}</a>`:''}</div>`};
 if(no)tf.dispatchEvent(new Event('submit'))}
+async function myOrders(){const saved=localStorage.getItem('my_mobile');
+if(!saved){$('#v').innerHTML=`<form class="card" id="mof"><h3>${t('myorders_title')}</h3><input name="m" placeholder="${t('myorders_mobile_ph')}" required><button class="btn">${t('myorders_save_btn')}</button></form>`;
+mof.onsubmit=e=>{e.preventDefault();localStorage.setItem('my_mobile',new FormData(mof).get('m').trim());myOrders()};return}
+$('#v').innerHTML=`<div class="card"><h3>${t('myorders_title')}</h3><div id="moList">…</div><button class="btn o" onclick="localStorage.removeItem('my_mobile');myOrders()">${t('myorders_change')}</button></div>`;
+const{data,error}=await sb.rpc('store_my_orders',{p_mobile:saved});
+const list=document.getElementById('moList');
+if(error||!data||!data.length){list.innerHTML=`<p>${t('myorders_empty')}</p>`;return}
+list.innerHTML=data.map(o=>`<div class="rv"><b>${esc(o.order_no)}</b> · ${new Date(o.created_at).toLocaleDateString()}<br>${(o.items||[]).map(i=>esc(i.name)+' × '+i.qty).join(', ')}<br><span class="statpill">${esc(o.status)}</span> <span class="statpill">${esc(o.payment_status)}</span>${o.tracking_url?` <a href="${esc(o.tracking_url)}" target="_blank">🚚</a>`:''}</div>`).join('')}
 function legal(page){const map={privacy:[t('privacy_policy'),S.privacy_text],terms:[t('terms'),S.terms_text],about:[t('about_us'),S.about_text]};const[title,text]=map[page]||['',''];
 $('#v').innerHTML=`<div class="card"><h2>${esc(title)}</h2><p style="white-space:pre-wrap">${esc(text||t('no_content_yet'))}</p></div>`}
-function setActiveNav(r){['nc','nw','nh','ncart','nt'].forEach(id=>$('#'+id).classList.remove('on'));const m={categories:'nc',wishlist:'nw','':'nh',cart:'ncart',track:'nt'};const id=m[r]||'nh';$('#'+id).classList.add('on')}
-function route(){const h=location.hash.slice(2).split('/');scrollTo(0,0);setActiveNav(h[0]);({p:prod,categories:categoriesPage,wishlist:wishv,cart:cartv,checkout:chk,done,track,legal}[h[0]]||home)(h[1])}
+function setActiveNav(r){['nc','nw','nh','ncart','nt'].forEach(id=>$('#'+id).classList.remove('on'));const m={myorders:'nc',wishlist:'nw','':'nh',cart:'ncart',track:'nt'};const id=m[r]||'nh';$('#'+id).classList.add('on')}
+function route(){const h=location.hash.slice(2).split('/');scrollTo(0,0);setActiveNav(h[0]);({p:prod,categories:categoriesPage,myorders:myOrders,wishlist:wishv,cart:cartv,checkout:chk,done,track,legal}[h[0]]||home)(h[1])}
 (async()=>{const[s,c,p]=await Promise.all([sb.from('store_settings').select(),sb.from('store_categories').select().eq('visible',true).order('sort'),sb.from('store_products').select().eq('visible',true).order('id',{ascending:false})]);
 S=Object.fromEntries((s.data||[]).map(r=>[r.key,r.value]));C=c.data||[];P=p.data||[];
 document.title=S.site_name||'Drone Store';$('#sn').textContent=S.site_name||'';if(S.logo_url){lg.src=S.logo_url;lg.hidden=false}
@@ -187,5 +206,7 @@ if(on('notice_on')&&S.notice)$('#noticebar').innerHTML=`<div class="notice">${es
 $('#ft').innerHTML=on('footer_on')?`<div class="fn">${esc(S.site_name||'')}</div><div class="fl">`+[S.address&&`📍 ${esc(S.address)}`,S.phone&&`📞 ${esc(S.phone)}`,S.messenger_page&&`<a href="https://m.me/${esc(S.messenger_page)}">💬 Messenger</a>`,S.facebook&&`<a href="${esc(S.facebook)}">📘 Facebook</a>`,esc(S.footer)].filter(Boolean).join('<br>')+
 `</div><div class="fl" style="margin-top:10px"><a href="#/legal/about">${t('about_us')}</a> · <a href="#/legal/privacy">${t('privacy_policy')}</a> · <a href="#/legal/terms">${t('terms')}</a></div>`+
 `<div class="fl" style="margin-top:10px;font-size:13px;opacity:.7">© ${new Date().getFullYear()} ${esc(S.site_name||'')}. ${t('copyright_suffix')}</div>`:'';
+const fabLinks=[S.messenger_page&&`<a href="https://m.me/${esc(S.messenger_page)}" target="_blank">💬 Messenger</a>`,S.whatsapp&&`<a href="https://wa.me/${esc(S.whatsapp)}" target="_blank">📱 WhatsApp</a>`,S.phone&&`<a href="tel:${esc(S.phone)}">📞 ${esc(S.phone)}</a>`].filter(Boolean);
+if(on('contact_fab_on')&&fabLinks.length){fabmenu.innerHTML=fabLinks.join('');$('#fabBtn').style.display='flex'}else{$('#fabBtn').style.display='none'}
 applyStatic();badge();addEventListener('hashchange',route);route()})();
 </script></body></html>
